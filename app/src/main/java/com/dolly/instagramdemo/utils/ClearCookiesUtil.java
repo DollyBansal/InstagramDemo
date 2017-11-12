@@ -11,7 +11,6 @@ import android.webkit.CookieSyncManager;
 public class ClearCookiesUtil {
     private static final String TAG = "ClearCookiesUtil";
 
-
     @SuppressWarnings("deprecation")
     public static void clearCookies(Context context) {
 
