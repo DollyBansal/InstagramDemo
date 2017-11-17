@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import com.dolly.instagramdemo.R;
 import com.dolly.instagramdemo.model.LikedByInstagramResponse;
@@ -17,9 +18,11 @@ import com.dolly.instagramdemo.utils.SharedPreferencesUtils;
 
 import java.util.ArrayList;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 // This activity will show the user who liked the specific post
 // on click "like count button" this activity will visible to the user
@@ -50,18 +53,31 @@ public class LikedByActivity extends AppCompatActivity {
     // and the results will be shown in UI with the help of RecyclerView
     public void fetchData(String mediaId, final LikedByRecyclerViewAdapter rcAdapter) {
 
-        Call<LikedByInstagramResponse> call = RestClient.getRetrofitService().
+        // we are using Observable not considering about backpressure,
+        // if we suspect that backpressure is occurring in our app
+        // then we can use Flowables instead of Observable
+        Observable<LikedByInstagramResponse> call = RestClient.getRetrofitService().
                 getLikes(mediaId, SharedPreferencesUtils.getSharedPreferencesToken(getApplicationContext()));
-        call.enqueue(new Callback<LikedByInstagramResponse>() {
+
+        // data is produced upstream by an Observable,
+        // and is then pushed downstream to the assigned Observer
+        Observer observer = new Observer<LikedByInstagramResponse>() {
             @Override
-            public void onResponse(Call<LikedByInstagramResponse> call, Response<LikedByInstagramResponse> response) {
-                if (!ErrorHandlingUtil.isCorrectInstagramResponse(getApplicationContext(), response.body())) {
+            public void onSubscribe(Disposable d) {
+                Log.i("onSubscribe", "onSubscribe");
+                // log to know the name of the current thread, here we are using mainThread
+                Log.i("onSubscribe()", Thread.currentThread().getName());
+            }
+
+            @Override
+            public void onNext(LikedByInstagramResponse responseData) {
+                if (!ErrorHandlingUtil.isCorrectInstagramResponse(getApplicationContext(), responseData)) {
                     return;
                 }
 
-                if (response.body().getData() != null) {
-                    for (int i = 0; i < response.body().getData().length; i++) {
-                        likedByUserData.add(response.body().getData()[i]);
+                if (responseData.getData() != null) {
+                    for (int i = 0; i < responseData.getData().length; i++) {
+                        likedByUserData.add(responseData.getData()[i]);
                     }
                     rcAdapter.notifyItemInserted(likedByUserData.size());
                 } else {
@@ -70,9 +86,24 @@ public class LikedByActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<LikedByInstagramResponse> call, Throwable t) {
-                ErrorHandlingUtil.showErrorToUser(getApplicationContext(), t.toString());
+            public void onError(Throwable e) {
+
             }
-        });
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+
+        // Reference: https://code.tutsplus.com/tutorials/reactive-programming-operators-in-rxjava-20--cms-28396
+        // Observable emits the data on the thread where subscriber is declared.
+        // with subscribeOn() operator we can define a different Scheduler
+        // we use observeOn(Scheduler) to redirect our Observable’s emissions to a different
+        // here we are using AndroidSchedulers.mainThread(), it redirect emissions to Android’s main UI thread
+        // which also include as part of the RxAndroid library, rather than the RxJava library.
+        call.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(observer);
     }
+
 }

@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -21,9 +22,12 @@ import com.dolly.instagramdemo.utils.SharedPreferencesUtils;
 
 import java.util.ArrayList;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 // Main activity.
 public class MainActivity extends AppCompatActivity implements AuthenticationListener {
@@ -32,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     private RecyclerView.LayoutManager layoutManager;
     private RecyclerView recyclerView;
     private ArrayList<Data> data = new ArrayList<>();
+    private CompositeDisposable disposables = new CompositeDisposable();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
         Toolbar toolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
 
+
+        // use a linear layout manager
         layoutManager = new LinearLayoutManager(this);
         recyclerView = findViewById(R.id.recycler_view_feed);
         recyclerView.setLayoutManager(layoutManager);
@@ -92,8 +100,11 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     // and show it in the UI with the help of RecycleView
     @Override
     public void onCodeReceived() {
+        // specify an adapter
         FeedRecyclerViewAdapter rcAdapter = new FeedRecyclerViewAdapter(this, data);
         recyclerView.setAdapter(rcAdapter);
+        // use this setting to improve performance if you know that changes
+        // in content do not change the layout size of the RecyclerView
         recyclerView.setHasFixedSize(true);
         fetchData(rcAdapter);
     }
@@ -101,20 +112,34 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     // fetch data from Instagram API by using Retrofit library
     // from API getting the recent media published by the owner with its like count, like status, etc
     public void fetchData(final FeedRecyclerViewAdapter rcAdapter) {
-        Call<FeedInstagramResponse> call = RestClient.getRetrofitService().
-                getUserImages(SharedPreferencesUtils.getSharedPreferencesToken(getApplicationContext()));
 
-        call.enqueue(new Callback<FeedInstagramResponse>() {
+        // The requests are built via Retrofit. The calls are made asynchronously through RxJava.
+        // we are using Observable not considering about backpressure,
+        // if we suspect that backpressure is occurring in our app
+        // then we can use Flowables instead of Observable
+        Observable<FeedInstagramResponse> call = RestClient.getRetrofitService()
+                .getUserImages(SharedPreferencesUtils.getSharedPreferencesToken(getApplicationContext()));
+
+        // data is produced upstream by an Observable,
+        // and is then pushed downstream to the assigned Observer
+        Observer observer = new Observer<FeedInstagramResponse>() {
             @Override
-            public void onResponse(Call<FeedInstagramResponse> call, Response<FeedInstagramResponse> response) {
-                if (!ErrorHandlingUtil.isCorrectInstagramResponse(getApplicationContext(), response.body())) {
+            public void onSubscribe(Disposable d) {
+                Log.i("onSubscribe", "onSubscribe");
+                // log to know the name of the current thread, here we are using mainThread
+                Log.i("onSubscribe()", Thread.currentThread().getName());
+            }
+
+            @Override
+            public void onNext(FeedInstagramResponse responseData) {
+                if (!ErrorHandlingUtil.isCorrectInstagramResponse(getApplicationContext(), responseData)) {
                     return;
                 }
 
                 // The good case. Everything is alright, and we got the data.
-                if (response.body().getData() != null) {
-                    for (int i = 0; i < response.body().getData().length; i++) {
-                        data.add(response.body().getData()[i]);
+                if (responseData.getData() != null) {
+                    for (int i = 0; i < responseData.getData().length; i++) {
+                        data.add(responseData.getData()[i]);
                     }
                     //notify the recycler view about the new data
                     rcAdapter.notifyItemInserted(data.size());
@@ -124,11 +149,25 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
             }
 
             @Override
-            public void onFailure(Call<FeedInstagramResponse> call, Throwable t) {
-                ErrorHandlingUtil.showErrorToUser(getApplicationContext(), t.toString());
+            public void onError(Throwable e) {
+                Log.i("onError", e.toString());
+                e.printStackTrace();
             }
-        });
 
+            @Override
+            public void onComplete() {
+                Log.i("onComplete", "onComplete");
+            }
+        };
+
+        // Reference: https://code.tutsplus.com/tutorials/reactive-programming-operators-in-rxjava-20--cms-28396
+        // Observable emits the data on the thread where subscriber is declared.
+        // with subscribeOn() operator we can define a different Scheduler
+        // we use observeOn(Scheduler) to redirect our Observable’s emissions to a different
+        // here we are using AndroidSchedulers.mainThread(), it redirect emissions to Android’s main UI thread
+        // which also include as part of the RxAndroid library, rather than the RxJava library.
+        call.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(observer);
     }
 
     // Logout from the app.

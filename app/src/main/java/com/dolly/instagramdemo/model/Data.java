@@ -27,6 +27,14 @@ public class Data {
         return likes;
     }
 
+    // has user liked the picture
+    public boolean getUser_has_liked() {
+        return user_has_liked;
+    }
+
+    public void setUser_has_liked(boolean user_has_liked) {
+        this.user_has_liked = user_has_liked;
+    }
 
     public class User {
 
@@ -65,15 +73,6 @@ public class Data {
                 return url;
             }
         }
-    }
-
-    // has user liked the picture
-    public boolean getUser_has_liked() {
-        return user_has_liked;
-    }
-
-    public void setUser_has_liked(boolean user_has_liked) {
-        this.user_has_liked = user_has_liked;
     }
 
     // number of likes on a picture

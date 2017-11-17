@@ -8,8 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.dolly.instagramdemo.model.LikedByUserData;
 import com.dolly.instagramdemo.R;
+import com.dolly.instagramdemo.model.LikedByUserData;
 
 import java.util.ArrayList;
 

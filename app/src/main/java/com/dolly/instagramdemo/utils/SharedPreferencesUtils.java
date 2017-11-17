@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 
 // The authentication token is saved persistently using SharedPreferences.
 // In future, to make things more robust, one can encrypt the token before saving.
+// Best approach is to to use the AccountManager.
 // More sophisticated methods can also be used - please see the link below.
 // https://stackoverflow.com/questions/42914230/should-i-store-user-object-with-authentication-token-attribute-in-sharedpreferen
 public class SharedPreferencesUtils {

@@ -36,5 +36,12 @@ AuthenticationDialog. Therefore, I prefer to have a clean interface with one met
 
 - User can click on like count and the app navigates to LikedByActivity. The user can see the list of users who liked this particular media. Apparently, the instagram API doesn't return the full list of names of such users. 
 
+Updates: 
+
+- Implementing RxJava Lib with Retrofit Lib. The network requests are built via Retrofit and the calls are made asynchronously through RxJava. 
+RxJava Lib is for bringing reactive programming to the Android platform,
+The main use for implementing RxJava with Retrofit is when we want to do the chaining/multiple API calls because Retrofit are optimized for single network call only. 
+
+Note: In this project we are not using chaining/multiple API calls but still I am using RxJava with Retrofit. 
 
 
