@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
         Toolbar toolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
 
-
         // use a linear layout manager
         layoutManager = new LinearLayoutManager(this);
         recyclerView = findViewById(R.id.recycler_view_feed);
@@ -54,11 +53,18 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
 
         // Check if an auth token exists. If not, ask user to authenticate.
         String auth_token = SharedPreferencesUtils.getSharedPreferencesToken(this);
+        // only checking if it is null or empty
+        // here we are not checking that its valid or not, assuming that the token will not expire.
         if (auth_token == null || auth_token.isEmpty()) {
             authenticate();
         } else {
             onCodeReceived();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 
     // Authenticate user by opening a dialog box.

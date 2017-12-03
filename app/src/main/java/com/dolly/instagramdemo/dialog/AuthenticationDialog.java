@@ -19,7 +19,10 @@ import com.dolly.instagramdemo.utils.SharedPreferencesUtils;
 // after authentication we will get the access_token
 public class AuthenticationDialog extends Dialog {
 
+    // Interface to ??
     private final AuthenticationListener listener;
+
+    // Url to get the auth token
     private final String url = InstagramConstants.BASE_URL
             + "oauth/authorize/?client_id="
             + InstagramConstants.CLIENT_ID
@@ -40,7 +43,6 @@ public class AuthenticationDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        System.out.println("In AuthenticationDialog. oncreate");
         this.setContentView(R.layout.auth_dialog);
         initializeWebView();
     }
