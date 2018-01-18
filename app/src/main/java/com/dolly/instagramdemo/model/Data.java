@@ -3,6 +3,8 @@ package com.dolly.instagramdemo.model;
 // Pojo mimicking JSON hierarchy
 // For simplicity defining some classes in one class.
 // Retrofit library parses the json response in the POJO objects.
+// POJO that matches each field in the JSON response object gotten from querying an API
+// https://api.instagram.com/v1/users/self/media/recent/?access_token=2200473475.1a35374.e139e3935a98413e9d527561e5ed8a70
 public class Data {
 
     private Images images;

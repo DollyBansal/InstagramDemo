@@ -20,6 +20,9 @@ import com.dolly.instagramdemo.utils.SharedPreferencesUtils;
 public class AuthenticationDialog extends Dialog {
 
     private final AuthenticationListener listener;
+
+    // authentication URL
+    // https://www.instagram.com/developer/authentication/
     private final String url = InstagramConstants.BASE_URL
             + "oauth/authorize/?client_id="
             + InstagramConstants.CLIENT_ID
@@ -32,7 +35,6 @@ public class AuthenticationDialog extends Dialog {
 
     public AuthenticationDialog(@NonNull Context context, AuthenticationListener listener) {
         super(context);
-        System.out.println("In AuthenticationDialog constructor.");
         this.context = context;
         this.listener = listener;
     }
@@ -40,16 +42,14 @@ public class AuthenticationDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        System.out.println("In AuthenticationDialog. oncreate");
         this.setContentView(R.layout.auth_dialog);
         initializeWebView();
     }
 
     private void initializeWebView() {
-        webView = (WebView) findViewById(R.id.web_view);
+        webView = findViewById(R.id.web_view);
         webView.loadUrl(url);
         webView.setWebViewClient(new WebViewClient() {
-            boolean authComplete = false;
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -60,18 +60,19 @@ public class AuthenticationDialog extends Dialog {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                if (url.contains("#access_token=") && !authComplete) {
+                if (url.contains("#access_token=")) {
                     Uri uri = Uri.parse(url);
                     String access_token = uri.getEncodedFragment();
                     // get the whole token after the '=' sign
                     access_token = access_token.substring(access_token.lastIndexOf("=") + 1);
+                    System.out.println("access_token = " + access_token);
                     // saving the token in SharedPreferences
                     SharedPreferencesUtils.saveDataInSharedPreferences(getContext(), access_token);
-                    authComplete = true;
                     listener.onCodeReceived();
                     dismiss();
 
                 } else if (url.contains("?error")) {
+                    // here we are just showing the error occurred
                     Toast.makeText(context, "Error Occurred", Toast.LENGTH_SHORT).show();
                     dismiss();
                 }

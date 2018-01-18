@@ -16,6 +16,9 @@ public class ErrorHandlingUtil {
     // Anything else indicates some sort of error. The two classes: "FeedInstagramResponse" and
     // "LikedByInstagramResponse" extend this class. The benefit of keeping meta field in a base class is that
     // the error handling of the response can be done in a clean manner, irrespective of the type of response.
+
+    // https://api.instagram.com/v1/users/self/media/recent/?access_token=2200473475.1a35374.e139e3935a98413e9d527561e5ed8a70
+
     public static boolean isCorrectInstagramResponse(Context context, BaseInstagramResponse responseBody) {
         // First handle the error cases.
         // Case 1: Response body is null or empty, or if meta is null.

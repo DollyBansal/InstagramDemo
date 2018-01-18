@@ -22,6 +22,8 @@ import com.dolly.instagramdemo.utils.SharedPreferencesUtils;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 import jp.wasabeef.picasso.transformations.RoundedCornersTransformation;
 import retrofit2.Call;
@@ -33,6 +35,7 @@ public class FeedRecyclerViewAdapter extends RecyclerView.Adapter<FeedRecyclerVi
     private Context context;
     private ArrayList<Data> data;
 
+    // Constructor
     public FeedRecyclerViewAdapter(Context context, ArrayList<Data> data) {
         this.context = context;
         this.data = data;
@@ -40,12 +43,17 @@ public class FeedRecyclerViewAdapter extends RecyclerView.Adapter<FeedRecyclerVi
 
     @Override
     public RecyclerViewHolderFeed onCreateViewHolder(ViewGroup parent, int viewType) {
+        // Inflate the view for this view holder
         View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.recycle_view_user_feed, parent, false);
+        // Call the view holder's constructor, and pass the view to it;
+        // return that new view holder
         return new RecyclerViewHolderFeed(layoutView);
     }
 
+    // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(final RecyclerViewHolderFeed holder, final int position) {
+        // Find out the data, based on this view holder's position
         // set the user fullname in textview
         holder.textview_user_fullname.setText(data.get(position).getUser().getFull_name());
         // set the state of like/unlike button
@@ -68,24 +76,20 @@ public class FeedRecyclerViewAdapter extends RecyclerView.Adapter<FeedRecyclerVi
                 .into(holder.imageviewv_photo);
 
         // set on click listener on like/unlike button
-        holder.floating_action_button_like_status.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // passing mediaId, previous like status before clicking the button
-                likeToggle(data.get(position).getId(), data.get(position).getUser_has_liked(), position, holder);
-            }
+        holder.floating_action_button_like_status.setOnClickListener(view -> {
+            // passing mediaId, previous like status before clicking the button
+            likeToggle(data.get(position).getId(), data.get(position).getUser_has_liked(), position, holder);
         });
 
         // start new activity on click listener to show the users who liked the feed pic
-        holder.button_like_count.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent myIntent = new Intent(context.getApplicationContext(), LikedByActivity.class);
-                myIntent.putExtra("mediaId", data.get(position).getId());
-                context.getApplicationContext().startActivity(myIntent);
-            }
+        holder.button_like_count.setOnClickListener(v -> {
+            Intent myIntent = new Intent(context.getApplicationContext(), LikedByActivity.class);
+            myIntent.putExtra("mediaId", data.get(position).getId());
+            context.getApplicationContext().startActivity(myIntent);
         });
     }
 
+    // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
         return data.size();
@@ -125,6 +129,9 @@ public class FeedRecyclerViewAdapter extends RecyclerView.Adapter<FeedRecyclerVi
                     return;
                 }
 
+                if (response.isSuccessful()) {
+                   
+                }
                 // changing the like/unlike state in UI if request is successful
                 setStateofLikeStatusInUI(holder, !hasLiked);
                 setUserLikeStatusinPOJO(hasLiked, position);

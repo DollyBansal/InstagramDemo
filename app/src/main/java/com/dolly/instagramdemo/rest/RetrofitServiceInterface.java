@@ -11,9 +11,12 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-public interface RetrofitService {
+//Interface which defines the HTTP operations
+public interface RetrofitServiceInterface {
 
+    // describing API endpoints
     @GET("/v1/users/self/media/recent")
+    // we need to all the request asynchronously with call
     Call<FeedInstagramResponse> getUserImages(@Query("access_token") String access_token);
 
     @POST("/v1/media/{media-id}/likes")

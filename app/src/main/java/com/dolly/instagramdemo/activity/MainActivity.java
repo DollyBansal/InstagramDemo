@@ -37,20 +37,30 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // action bar
         Toolbar toolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
 
+        // use a linear layout manager
         layoutManager = new LinearLayoutManager(this);
         recyclerView = findViewById(R.id.recycler_view_feed);
         recyclerView.setLayoutManager(layoutManager);
 
         // Check if an auth token exists. If not, ask user to authenticate.
         String auth_token = SharedPreferencesUtils.getSharedPreferencesToken(this);
+        System.out.println("auth_token = " + auth_token);
         if (auth_token == null || auth_token.isEmpty()) {
             authenticate();
         } else {
             onCodeReceived();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        // TODO: Login logic here because onResume is always called
+        super.onResume();
     }
 
     // Authenticate user by opening a dialog box.
@@ -92,7 +102,14 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     // and show it in the UI with the help of RecycleView
     @Override
     public void onCodeReceived() {
+
+        String auth_token = SharedPreferencesUtils.getSharedPreferencesToken(this);
+        System.out.println("auth_token = " + auth_token);
+
+        // specify an adapter
         FeedRecyclerViewAdapter rcAdapter = new FeedRecyclerViewAdapter(this, data);
+        // use this setting to improve performance if you know that changes
+        // in content do not change the layout size of the RecyclerView
         recyclerView.setAdapter(rcAdapter);
         recyclerView.setHasFixedSize(true);
         fetchData(rcAdapter);
@@ -101,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
     // fetch data from Instagram API by using Retrofit library
     // from API getting the recent media published by the owner with its like count, like status, etc
     public void fetchData(final FeedRecyclerViewAdapter rcAdapter) {
+        //
         Call<FeedInstagramResponse> call = RestClient.getRetrofitService().
                 getUserImages(SharedPreferencesUtils.getSharedPreferencesToken(getApplicationContext()));
 
@@ -111,13 +129,23 @@ public class MainActivity extends AppCompatActivity implements AuthenticationLis
                     return;
                 }
 
+
+
                 // The good case. Everything is alright, and we got the data.
                 if (response.body().getData() != null) {
                     for (int i = 0; i < response.body().getData().length; i++) {
                         data.add(response.body().getData()[i]);
                     }
-                    //notify the recycler view about the new data
-                    rcAdapter.notifyItemInserted(data.size());
+
+                    data.sort((i1, i2) -> Integer.compare(Integer.valueOf(i2.getLikes().getCount()), Integer.valueOf(i1.getLikes().getCount())));
+
+                    if (response.isSuccessful()) {
+                        runOnUiThread(() -> {
+                            //notify the recycler view about the new data
+                            rcAdapter.notifyItemInserted(data.size());
+                        });
+                    }
+
                 } else {
                     ErrorHandlingUtil.showErrorToUser(getApplicationContext(), "Something went wrong. Data returned is null");
                 }
